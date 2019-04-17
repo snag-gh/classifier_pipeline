@@ -1,0 +1,249 @@
+---
+title: null
+output: 
+  pdf_document:
+   latex_engine: xelatex
+header-includes: 
+   \renewcommand{\familydefault}{\sfdefault}
+   \usepackage{booktabs}
+   \usepackage{longtable}
+   \usepackage{array}
+   \usepackage{multirow}
+   \usepackage{wrapfig}
+   \usepackage{float}
+   \usepackage{colortbl}
+   \usepackage{pdflscape}
+   \usepackage{tabu}
+   \usepackage{threeparttable}
+   \usepackage{threeparttablex}
+   \usepackage[dvipsnames]{xcolor}
+   \usepackage{graphicx}
+   \usepackage{fancyhdr}
+   \geometry{
+    left=20mm,
+    right=20mm,
+    headheight=4cm,
+    top=4cm,
+    bottom=2cm
+  }
+   \pagestyle{fancy}
+   \renewcommand{\headrulewidth}{0.8pt}
+   \fancyhead[L]{\includegraphics[width=6cm]{/data/Compass/Tools/classifier_pipeline/scripts/classifier/logos/logo6.jpg}}
+   \fancyhead[R]{\includegraphics[width=2.5cm]{/data/Compass/Tools/classifier_pipeline/scripts/classifier/logos/nmp.png}}
+   \fancyfoot[L]{$`r paste(gsub("_", "\\\\_", params$sampleID), gsub("_", "\\\\_", params$sample), sep = "|")`$}
+   \fancyfoot[R]{$`r paste(gsub("_", "\\\\_", params$case))`$}
+params:
+  sampleID: "CERN-298"
+  sample: "203013220007_R07C01"
+  case: "SS-Mock"
+  material: "FFPE"
+  sex: "M"
+  output_dir: "/data/nagarajs2"
+  version: "0"
+  pipeline: "/data/nagarajs2/classifier_pipeline"
+---
+
+
+\textbf{\Large Methylation Profiling Report}
+
+\hfill
+
+\textbf{Report date: $`r format(Sys.Date(), '%m/%d/%Y')`$}
+
+\vspace{6mm}
+
+
+```{r set-options, echo=FALSE, cache=FALSE,message=FALSE,warning=FALSE}
+options(width = 320)
+options(scipen = 5)
+library(mnpqc)
+```
+
+\textbf{\large Sample Information}
+
+
+```{r,error=FALSE,message=FALSE,warning=FALSE,echo=FALSE,size="Huge"}
+library(mnp.v11b4)
+library(knitr)
+options(kableExtra.latex.load_packages =FALSE)
+library(kableExtra)
+sampleinfo2 <- c(params$case, params$sampleID, params$sample, params$material, params$sex, " ")
+names(sampleinfo2) <- c("Surgical Case #", "Sample identifier", "Sentrix ID", "Material Type", "Gender", "Array type")
+
+sample <- params$sample
+sampleID <- params$sampleID
+
+RGset <- RGset[,sample]
+Mset <- MNPpreprocessIllumina(RGset)
+if(is.null(FFPE)) FFPE <- MNPgetFFPE(RGset)
+Mset_ba <- MNPbatchadjust(Mset,FFPE)
+sex <- ifelse(MNPgetSex(Mset)$predictedSex=="M","Male","Female")
+sentrix <- colnames(RGset)
+chiptype <- annotation(RGset)[1]
+suppinfo <- c(chiptype,FFPE,sex)
+names(suppinfo)<- c("Array type","Material type","Gender")
+suppinfo2 <- c(" ", " ", " ", FFPE,sex,chiptype)
+names(suppinfo2) <- c("Surgical Case #", "Sample identifier", "Sentrix ID", "Material Type", "Gender", "Array type")
+suppinfo <- as.data.frame(suppinfo)
+colnames(suppinfo) <- " "
+
+temp <- data.frame(sampleinfo2, suppinfo2)
+colnames(temp) <- c(" ", "Automatic prediction")
+kable(temp, format = "latex", booktabs = T) %>% kable_styling(full_width = F, position = "left") %>% column_spec(3, background = "lightgray")
+```
+
+
+```{r setup,echo=FALSE}
+probs <- MNPpredict(Mset_ba[,1], type='prob')
+probs_mcf <- MNPpredict(Mset_ba[,1], type='prob',MCF=TRUE)
+
+top_score <- max(probs_mcf)
+if (top_score >= 0.3) {
+  show_text <- TRUE
+  show_alt_text <-  FALSE
+} else { 
+  show_text <- FALSE
+  show_alt_text <- TRUE
+  }
+```
+
+\vspace{5mm}
+
+
+```{r conditional, echo=FALSE, eval=show_text, results="asis", warning=FALSE}
+cat("\\textbf{\\large Brain tumor methylation classifier results} \\textsuperscript{1} \\newline \\newline
+\\textbf{Methylation classes}")
+order_mcf <- order(probs_mcf,decreasing=T)
+probs_mcf_ord <- probs_mcf[order_mcf]
+dim(probs_mcf_ord) <- c(1, length(probs_mcf_ord))
+colnames(probs_mcf_ord) <- colnames(probs_mcf)[order_mcf]
+row.names(probs_mcf_ord) <- row.names(probs_mcf)
+oo_mcf <- which(probs_mcf_ord >= 0.3)
+eps <- 1e-4
+reflistNCI <- read.table(file = file.path(params$pipeline, "/scripts/classifier/data/mnp.reflist.tsv"), sep = "\t", header = T)
+idxfam = 0
+my_classes <- vector("list", length(oo_mcf))
+names(my_classes) <- oo_mcf
+
+for ( oo_temp in oo_mcf ) {
+  out_mcf <- probs_mcf_ord[oo_temp]
+  out_mcf <- cbind(round(pmax(pmin(out_mcf,1-eps),eps),3),colnames(probs_mcf_ord)[oo_temp])
+  #If the methylation class has a methylation family
+  if ( sum(!is.na(match(reflistNCI[,"MC.Familes"], out_mcf[1,2]))) > 0 ) {
+    reflistFam <- read.table(file = file.path(params$pipeline, "/scripts/classifier/data/mnp.reflist.families.tsv"), sep = "\t", header = T)
+    idxfam <- match(out_mcf[,2], reflistFam[,"MC.Families"])
+    mc.family <- out_mcf[,2]
+    name <- as.character(reflistFam[idxfam, "group.name.v11"])
+    desc <- as.character(reflistFam[idxfam, "group.desc"])
+    out_mcf <- cbind(out_mcf, name, desc)
+    colnames(out_mcf) <- c("Calibrated Score","Methylation Class Abbr", "Name", "Description")
+    out_mcf <- as.data.frame(out_mcf)
+    out_mcf$indent <- 0
+    top_classes <- which(probs >= 0.1)
+    out1 <- probs[top_classes]
+    dim(out1) <- c(1, length(out1))
+    colnames(out1) <- colnames(probs)[top_classes]
+    anno <- reflistNCI[!is.na(match(reflistNCI$Abbreviations..short..for.figures., colnames(out1))),]
+    anno <- anno[!is.na(match(anno$MC.Familes, mc.family)), "Abbreviations..short..for.figures."]
+    outf <- out1[colnames(out1) %in% anno]
+    names(outf) <- colnames(out1)[colnames(out1) %in% anno]
+    oo <- order(outf, decreasing = T)
+    out <- outf[oo]
+    out <- cbind(round(pmax(pmin(out,1-eps),eps),3),names(outf)[oo])
+    idx <- match(out[,2],reflistNCI[,2])
+    name <- as.character(reflistNCI[idx, 5])
+    desc <- as.character(reflistNCI[idx, 7])
+    out <- cbind(out, name, desc)
+    colnames(out) <- c("Calibrated Score","Methylation Class Abbr", "Name", "Description")
+    out <- as.data.frame(out)
+    out$indent <- 1
+    final <- rbind(out_mcf, out)
+    my_classes[[as.character(oo_temp)]] <- final
+  } else {
+    mc.class <- out_mcf[ ,2]
+    idx <- match(out_mcf[,2],reflistNCI[,2])
+    name <- as.character(reflistNCI[idx, 5])
+    desc <- as.character(reflistNCI[idx, 7])
+    out_mcf <- cbind(out_mcf, name, desc)
+    colnames(out_mcf) <- c("Calibrated Score","Methylation Class Abbr", "Name", "Description")
+    out_mcf <- as.data.frame(out_mcf)
+    out_mcf$indent <- 0
+    my_classes[[as.character(oo_temp)]] <- out_mcf
+  }
+}
+
+my_classes_all <- do.call(rbind, my_classes)
+out_table <- my_classes_all[ ,c(3,1)]
+colnames(out_table) <- c(" ", "Calibrated Score")
+write.table(out_table, file = paste0(params$output_dir, "/", params$sampleID, "_", params$sample, "_classifier_prediction.tsv"), row.names = F)
+kable(out_table, format = "latex", booktabs = T, row.names = FALSE) %>% kable_styling(latex_options = "striped", full_width = T) %>% column_spec(1, width = "14cm") %>% row_spec(1, color = "blue") %>% add_indent(which(my_classes_all$indent == 1))
+mc_desc <- paste0(paste0("\\textbf{", my_classes_all[ ,3], "}: ", I(as.character(my_classes_all[ ,4])), "  \n"), collapse = "") 
+cat("\\begingroup
+\\footnotesize Methylation Classes and Families are reported only for results with score >= 0.3. Indented lines in the table are family members with score >= 0.1.
+\\endgroup")
+```
+
+
+```{r conditional_print, echo=FALSE, eval=show_alt_text, results="asis"}
+cat("\\textbf{Brain tumor methylation classifier results - No matching methylation classes with calibrated score >= 0.3}")
+```
+
+\vspace{5mm}
+
+
+```{r, echo=FALSE, eval=show_text, results="asis"}
+cat(c("\\textbf{Methylation Class Description} \\
+\\begingroup
+\\footnotesize", 
+I(as.character(mc_desc)), 
+"\\endgroup"))
+```
+
+\vspace{5mm}
+
+\textbf{\large Copy Number Variation Profile} \textsuperscript{2}
+
+
+```{r,error=FALSE,message=FALSE,warning=FALSE,fig.align="center",fig.width = 20,fig.height=10,echo=FALSE, results="asis"}
+mnp.v11b4::MNPcnvplot(Mset,sex=sex,main=sampleID)
+```
+
+\begingroup
+\footnotesize Depiction of chromosome 1 to 22 (and X/Y if automatic prediction was successful). Gains/amplifications represent positive, losses negative deviations from the baseline. 29 brain tumor relevant gene regions are highlighted for easier assessment.
+\endgroup
+
+\vspace{3mm}
+
+\textbf{\large MGMT promotor methylation status prediction} \textsuperscript{3}
+
+
+```{r,echo=FALSE,fig.height=1.25, fig.width=3,fig.align="left"}
+Mset_raw <- preprocessRaw(RGset)
+suppressWarnings(MNPciplot_mgmt(Mset_raw))
+pred <- MNPpredict_mgmt(Mset_raw)
+knitr::kable(pred)
+write.table(pred, file = paste0(params$output_dir, "/", params$sampleID, "_", params$sample, "_mgmt_prediction.tsv"), row.names = F)
+```
+
+\textbf{\large References} \newline
+\begingroup
+\footnotesize 
+1. Capper D, Jones DTW, Sill M, Hovestadt V et al., Nature. 2018 Mar 22;555(7697):469-474. \newline
+2. Hovestadt \& Zapatka, http://www.bioconductor.org/packages/devel/bioc/html/conumee.html) \newline
+3. Bady et al, J Mol Diagn 2016; 18(3):350-61).
+\endgroup
+
+\textbf{\large Disclaimer} \newline
+\begingroup
+\footnotesize This analysis is a supplemental to the diagnosis of the requesting pathologist. This test was developed and its performance characteristics were determined by the Chromosome Pathology Section, Laboratory of Pathology, CCR, NCI. It has not been cleared or approved by the U.S. Food and Drug Administration. The FDA has determined that such clearance or approval is not necessary. This test is used for clinical purposes. It should not be regarded as investigational or for research. This laboratory is certified under the Clinical Laboratory Improvement Amendments of 1988 (CLIA-88) as qualified to perform high complexity clinical laboratory testing.
+\endgroup
+
+\textbf{\large Run information} \newline
+
+
+```{r, echo=FALSE, size="Tiny"}
+version <- c(params$version, package.version("mnp.v11b4"), package.version("conumee"), package.version("mgmtstp27"), package.version("minfi"))
+names(version) <- c("pipeline", "mnp.v11b4", "conumee", "mgmtstp27", "minfi")
+version <- as.data.frame(t(version))
+kable(version, format = "latex", booktabs = T) %>% kable_styling(font_size = 7, position = "left")
+```
