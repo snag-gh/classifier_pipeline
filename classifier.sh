@@ -73,5 +73,5 @@ else
         chgrp -f Compass logs
         chmod g+rwx logs
     fi
-    sbatch -e pipeline.%j.%x.e -o pipeline.%j.%x.o --job-name=classifier.$runid.$DATE --mem=1G --partition=ccr,norm --time=04:00:00 --cpus-per-task=1 $PIPELINE_HOME/submit.sh	
+    sbatch -e pipeline.%j.%x.e -o pipeline.%j.%x.o --job-name=mnp_pipeline.$runid.$DATE --mem=1G --partition=ccr,norm --time=04:00:00 --cpus-per-task=1 $PIPELINE_HOME/submit.sh	
 fi

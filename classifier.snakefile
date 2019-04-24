@@ -13,17 +13,15 @@ configfile: PIPELINE + '/config/cluster.json'
 GROUP = config['group']
 VERSION = config['version']
 
-#currentDT = datetime.datetime.now()
-#date = currentDT.strftime('%Y%m%d_%H%M%S')
-
 SAMPLES = {}
 TARGETS = []
 
 samplesheet = RUNDIR + '/' + config['RUNID'] + '/Sample_Sheet.csv'
-df = pd.read_csv(samplesheet, delimiter = ',', skiprows = 7)
+df0 = pd.read_csv(samplesheet, delimiter = ',', skiprows = 7, skip_blank_lines = True, dtype = {'Sample_Name': object, 'Sample_Well': object, 'Sample_Plate': object, 'Sample_Group': object, 'Pool_ID': object, 'Sentrix_ID': object, 'Sentrix_Position': object, 'Material_Type': object, 'Gender': object, 'Surgical_Case': object})
+df = df0.dropna(axis=0, how='all')
 df = pd.DataFrame(df)
 for i, j, k in zip(df.Sample_Name.values, df.Sentrix_ID.values, df.Sentrix_Position.values):
-    SAMPLES[i] = str (j) + '_' + k
+    SAMPLES[i] = j + '_' + k
     
 
 #pp(df)                           
@@ -31,8 +29,6 @@ for i, j, k in zip(df.Sample_Name.values, df.Sentrix_ID.values, df.Sentrix_Posit
 
 TARGETS.append(OUTDIR + '/QCreports/' + config['RUNID'] + '/' + config['RUNID'] + '.qcReport.pdf')
 
-#for sample, sentrix_id in SAMPLES.items():
-#    TARGETS.append(OUTDIR + '/ClassifierReports/' + config['RUNID'] + '/' + sample + '_Report_' + sentrix_id + '_run_' + currentdate + '.pdf')
 
 for sample, sentrix_id in SAMPLES.items():
     TARGETS.append(OUTDIR + '/ClassifierReports/' + sample + '_' + sentrix_id + '/' + sample + '_Report_' + sentrix_id + '_run_' + currentdate + '.pdf')
@@ -45,20 +41,20 @@ onstart:
     shell("ssh biowulf.nih.gov \"echo 'Classifier pipeline {VERSION} started on run: {RUN}' | mutt -s 'Classifier Pipeline: {RUN}' `whoami`\@mail.nih.gov\"")
 
 onsuccess:
-    shell("find .snakemake/ logs {RUN}.yaml \( -type f -user $USER -exec chmod g+rw {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
-    shell("find .snakemake/ logs {RUN}.yaml -group $USER -exec chgrp -f {GROUP} {{}} \;")
+    print('Pipeline completed')
     shell("find {OUTDIR}/ClassifierReports {OUTDIR}/QCreports/{RUN} -group $USER -exec chgrp -f {GROUP} {{}} \;")
     shell("find {OUTDIR}/ClassifierReports {OUTDIR}/QCreports/{RUN} \( -type f -user $USER -exec chmod g+rw {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
     shell("ssh biowulf.nih.gov \"echo 'Classifier pipeline {VERSION} completed successfully on run: {RUN}' | mutt -s 'Classifier Pipeline: {RUN}' `whoami`\@mail.nih.gov\"")
-    print('Pipeline completed')
+    shell("find .snakemake/ logs {RUN}.yaml \( -type f -user $USER -exec chmod g+rw {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
+    shell("find .snakemake/ logs {RUN}.yaml -group $USER -exec chgrp -f {GROUP} {{}} \;")
 
 onerror:
     print('An error occured')
-    shell("find .snakemake/ logs {RUN}.yaml \( -type f -user $USER -exec chmod g+rw {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
-    shell("find .snakemake/ logs {RUN}.yaml -group $USER -exec chgrp -f {GROUP} {{}} \;")
     shell("find {OUTDIR}/ClassifierReports {OUTDIR}/QCreports/{RUN} -group $USER -exec chgrp -f {GROUP} {{}} \;")
     shell("find {OUTDIR}/ClassifierReports {OUTDIR}/QCreports/{RUN} \( -type f -user $USER -exec chmod g+rw {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
     shell("ssh biowulf.nih.gov \"echo 'Classifier pipeline {VERSION} has errored on run: {RUN}' | mutt -s 'Classifier Pipeline: {RUN}' `whoami`\@mail.nih.gov\"")
+    shell("find .snakemake/ logs {RUN}.yaml \( -type f -user $USER -exec chmod g+rw {{}} \; \) , \( -type d -user $USER -exec chmod g+rwx {{}} \; \)")
+    shell("find .snakemake/ logs {RUN}.yaml -group $USER -exec chgrp -f {GROUP} {{}} \;")
 
 rule all:
     input:
