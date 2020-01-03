@@ -1,0 +1,92 @@
+Color	Class	Histology
+"#FF0000"	EPN, RELA	Ependymal
+"#F00000"	EPN, YAP	Ependymal
+"#E20000"	EPN, PF A	Ependymal
+"#D30000"	EPN, PF B	Ependymal
+"#C40000"	EPN, SPINE	Ependymal
+"#B60000"	EPN, MPE	Ependymal
+"#A80000"	SUBEPN, PF	Ependymal
+"#990000"	SUBEPN, SPINE	Ependymal
+"#8B0000"	SUBEPN, ST	Ependymal
+"#00BFFF"	ETMR	Embryonal
+"#02B7FA"	MB, WNT	Embryonal
+"#04B0F5"	MB, G3	Embryonal
+"#07A8F0"	MB, G4	Embryonal
+"#09A1EB"	MB, SHH CHL AD	Embryonal
+"#0C99E6"	MB, SHH INF	Embryonal
+"#0E92E1"	ATRT, MYC	Embryonal
+"#108ADC"	ATRT, SHH	Embryonal
+"#1383D7"	ATRT, TYR	Embryonal
+"#157BD2"	CNS NB, FOXR2	Embryonal
+"#1874CD"	HGNET, BCOR	Embryonal
+"#98FB98"	DMG, K27	Glioblastoma
+"#8EEB8E"	GBM, G34	Glioblastoma
+"#84DB84"	GBM, MES	Glioblastoma
+"#7ACB7A"	GBM, RTK I	Glioblastoma
+"#71BB71"	GBM, RTK II	Glioblastoma
+"#67AB67"	GBM, RTK III	Glioblastoma
+"#5D9B5D"	GBM, MID	Glioblastoma
+"#548B54"	GBM, MYCN	Glioblastoma
+"#FFA500"	CN	Glio-neuronal
+"#FA9A00"	DLGNT	Glio-neuronal
+"#F58F00"	LIPN	Glio-neuronal
+"#F08400"	LGG, DIG/DIA	Glio-neuronal
+"#EB7900"	LGG, DNT	Glio-neuronal
+"#E66E00"	LGG, RGNT	Glio-neuronal
+"#E16300"	RETB	Glio-neuronal
+"#DC5800"	ENB, A	Glio-neuronal
+"#D74D00"	ENB, B	Glio-neuronal
+"#D24200"	PGG, nC	Glio-neuronal
+"#CD3700"	LGG, GG	Glio-neuronal
+"#00EEEE"	CPH, ADM	Sella
+"#00E3E3"	CPH, PAP	Sella
+"#00D8D8"	PITAD, ACTH	Sella
+"#00CDCD"	PITAD, FSH LH	Sella
+"#00C2C2"	PITAD, PRL	Sella
+"#00B7B7"	PITAD, STH SPA	Sella
+"#00ACAC"	PITAD, TSH	Sella
+"#00A1A1"	PITAD, STH DNS A	Sella
+"#009595"	PITAD, STH DNS B	Sella
+"#008B8B"	PITUI	Sella
+"#EE82EE"	CHORDM	Mesenchymal
+"#DC68E8"	EWS	Mesenchymal
+"#CA4DE3"	HMB	Mesenchymal
+"#B833DD"	MNG	Mesenchymal
+"#A619D8"	SFT HMPC	Mesenchymal
+"#9400D3"	EFT, CIC	Mesenchymal
+"#AB82FF"	CHGL	Other glioma
+"#A27BF2"	LGG, SEGA	Other glioma
+"#9974E5"	LGG, PA PF	Other glioma
+"#916ED8"	LGG, PA MID	Other glioma
+"#8867CB"	ANA PA	Other glioma
+"#7F61BE"	HGNET, MN1	Other glioma
+"#775AB1"	IHG	Other glioma
+"#6E54A4"	LGG, MYB	Other glioma
+"#654D97"	LGG, PA/GG ST	Other glioma
+"#5D478B"	PXA	Other glioma
+"#0000CD"	MELAN	Melanocytic
+"#00008B"	MELCYT	Melanocytic
+"#D2691E"	PLEX, AD	Plexus
+"#AE5718"	PLEX, PED A	Plexus
+"#8B4513"	PLEX, PED B	Plexus
+"#FFD700"	A IDH	Glioma IDH
+"#E6C200"	A IDH, HG	Glioma IDH
+"#CDAD00"	O IDH	Glioma IDH
+"#CDC9C9"	CONTR, ADENOPIT	Control
+"#BEBABA"	CONTR, WM	Control
+"#AFACAC"	CONTR, CEBM	Control
+"#A09E9E"	CONTR, HEMI	Control
+"#929090"	CONTR, HYPTHAL	Control
+"#838181"	CONTR, INFLAM	Control
+"#747373"	CONTR, PINEAL	Control
+"#656565"	CONTR, PONS	Control
+"#575757"	CONTR, REACT	Control
+"#9932CC"	LYMPHO	Hematopoietic
+"#483D8B"	PLASMA	Hematopoietic
+"#FFD39B"	SCHW	Nerve
+"#EEC591"	SCHW, MEL	Nerve
+"#CAFF70"	PTPR, A	Pineal
+"#C0F26A"	PTPR, B	Pineal
+"#B5E665"	PIN T,  PB B	Pineal
+"#ABD95F"	PIN T,  PB A	Pineal
+"#A2CD5A"	PIN T, PPT	Pineal

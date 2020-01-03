@@ -10,7 +10,6 @@ header-includes:
    \usepackage{array}
    \usepackage{multirow}
    \usepackage{wrapfig}
-   \usepackage{float}
    \usepackage{colortbl}
    \usepackage{pdflscape}
    \usepackage{tabu}
@@ -19,6 +18,8 @@ header-includes:
    \usepackage[dvipsnames]{xcolor}
    \usepackage{graphicx}
    \usepackage{fancyhdr}
+   \usepackage{floatrow}
+   \usepackage{subfig}
    \geometry{
     left=20mm,
     right=20mm,
@@ -38,17 +39,25 @@ params:
   case: "SS-Mock"
   material: "FFPE"
   sex: "M"
+  arrayt: "EPIC"
+  diagnosis: "diagnosis"
   output_dir: "/data/nagarajs2"
   version: "0"
   pipeline: "/data/nagarajs2/classifier_pipeline"
+  currentdate: "NA"
 ---
 
+\newcommand*{\FillLine}[2]{%
+\noindent\parbox{\linewidth}{%
+    \rightskip\fill\parfillskip-\rightskip
+    \linepenalty100
+    \exhyphenpenalty0
+    \textbf{\Large #1}
+    \hspace*{\fill}\textbf{Report date: #2}% 
+}%
+}
 
-\textbf{\Large Methylation Profiling Report}
-
-\hfill
-
-\textbf{Report date: $`r format(Sys.Date(), '%m/%d/%Y')`$}
+\FillLine{Methylation Profiling Report}{$`r format(Sys.Date(), '%m/%d/%Y')`$}
 
 \vspace{6mm}
 
@@ -67,8 +76,8 @@ library(mnp.v11b4)
 library(knitr)
 options(kableExtra.latex.load_packages =FALSE)
 library(kableExtra)
-sampleinfo2 <- c(params$case, params$sampleID, params$sample, params$material, params$sex, " ")
-names(sampleinfo2) <- c("Surgical Case #", "Sample identifier", "Sentrix ID", "Material Type", "Gender", "Array type")
+sampleinfo2 <- c(params$case, params$sampleID, params$sample, params$material, params$sex, params$arrayt, params$diagnosis)
+names(sampleinfo2) <- c("Surgical Case #", "Sample identifier", "Sentrix ID", "Material Type", "Gender", "Array type", "Diagnosis")
 
 sample <- params$sample
 sampleID <- params$sampleID
@@ -80,22 +89,33 @@ Mset_ba <- MNPbatchadjust(Mset,FFPE)
 sex <- ifelse(MNPgetSex(Mset)$predictedSex=="M","Male","Female")
 sentrix <- colnames(RGset)
 chiptype <- annotation(RGset)[1]
+chip <- ifelse(chiptype == "IlluminaHumanMethylationEPIC", "EPIC", "N/A")
 suppinfo <- c(chiptype,FFPE,sex)
 names(suppinfo)<- c("Array type","Material type","Gender")
-suppinfo2 <- c(" ", " ", " ", FFPE,sex,chiptype)
-names(suppinfo2) <- c("Surgical Case #", "Sample identifier", "Sentrix ID", "Material Type", "Gender", "Array type")
+suppinfo2 <- c(" ", " ", " ", FFPE,sex,chip, " ")
+names(suppinfo2) <- c("Surgical Case #", "Sample identifier", "Sentrix ID", "Material Type", "Gender", "Array type", "Diagnosis")
 suppinfo <- as.data.frame(suppinfo)
 colnames(suppinfo) <- " "
 
 temp <- data.frame(sampleinfo2, suppinfo2)
 colnames(temp) <- c(" ", "Automatic prediction")
-kable(temp, format = "latex", booktabs = T) %>% kable_styling(full_width = F, position = "left") %>% column_spec(3, background = "lightgray")
+kable(temp, format = "latex", booktabs = T) %>% kable_styling(full_width = T, position = "left") %>% column_spec(3, background = "lightgray") %>% column_spec(2, width = "9cm")
 ```
 
 
 ```{r setup,echo=FALSE}
 probs <- MNPpredict(Mset_ba[,1], type='prob')
 probs_mcf <- MNPpredict(Mset_ba[,1], type='prob',MCF=TRUE)
+
+order_probs <- order(probs, decreasing=T)
+probs_ord <- probs[order_probs]
+names(probs_ord) <- colnames(probs)[order_probs]
+write.table(probs_ord, file = paste0(params$output_dir, "/", params$sampleID, "_", params$sample, "_calibrated_class_scores_", params$currentdate, ".tsv"))
+
+order_probs_mcf <- order(probs_mcf, decreasing=T)
+probs_mcf_ordered <- probs_mcf[order_probs_mcf]
+names(probs_mcf_ordered) <- colnames(probs_mcf)[order_probs_mcf]
+write.table(probs_mcf_ordered, file = paste0(params$output_dir, "/", params$sampleID, "_", params$sample, "_calibrated_family_scores_", params$currentdate, ".tsv"))
 
 top_score <- max(probs_mcf)
 if (top_score >= 0.3) {
@@ -104,6 +124,13 @@ if (top_score >= 0.3) {
 } else { 
   show_text <- FALSE
   show_alt_text <- TRUE
+  }
+
+top_class <- names(probs_mcf_ordered[1])
+if (top_class == "MTGF_IDH_GLM") {
+  codel <- TRUE
+} else {
+  codel <- FALSE
   }
 ```
 
@@ -175,7 +202,7 @@ for ( oo_temp in oo_mcf ) {
 my_classes_all <- do.call(rbind, my_classes)
 out_table <- my_classes_all[ ,c(3,1)]
 colnames(out_table) <- c(" ", "Calibrated Score")
-write.table(out_table, file = paste0(params$output_dir, "/", params$sampleID, "_", params$sample, "_classifier_prediction.tsv"), row.names = F)
+write.table(out_table, file = paste0(params$output_dir, "/", params$sampleID, "_", params$sample, "_classifier_prediction_", params$currentdate, ".tsv"), row.names = F)
 kable(out_table, format = "latex", booktabs = T, row.names = FALSE) %>% kable_styling(latex_options = "striped", full_width = T) %>% column_spec(1, width = "14cm") %>% row_spec(1, color = "blue") %>% add_indent(which(my_classes_all$indent == 1))
 mc_desc <- paste0(paste0("\\textbf{", my_classes_all[ ,3], "}: ", I(as.character(my_classes_all[ ,4])), "  \n"), collapse = "") 
 cat("\\begingroup
@@ -201,11 +228,13 @@ I(as.character(mc_desc)),
 
 \vspace{5mm}
 
-\textbf{\large Copy Number Variation Profile} \textsuperscript{2}
-
 
 ```{r,error=FALSE,message=FALSE,warning=FALSE,fig.align="center",fig.width = 20,fig.height=10,echo=FALSE, results="asis"}
-mnp.v11b4::MNPcnvplot(Mset,sex=sex,main=sampleID)
+cat("\\textbf{\\large Copy Number Variation Profile} \\textsuperscript{2}")
+#mnp.v11b4::MNPcnvplot(Mset,sex=sex,main=sampleID)
+suppressPackageStartupMessages(library(conumee))
+source(file.path(params$pipeline, "scripts/classifier/MNPcnvplot.R"))
+MNPcnvplot(Mset, sex = sex, fname = paste0(params$sampleID, "_", params$sample, "_", params$currentdate), output_dir = params$output_dir, main = sampleID)
 ```
 
 \begingroup
@@ -214,15 +243,57 @@ mnp.v11b4::MNPcnvplot(Mset,sex=sex,main=sampleID)
 
 \vspace{3mm}
 
-\textbf{\large MGMT promotor methylation status prediction} \textsuperscript{3}
+```{r, echo=FALSE, eval=codel, results="asis"}
+Sys.setenv(INPUT = file.path(params$output_dir, paste0(params$sampleID, "_", params$sample, "_", params$currentdate, ".seg")))
+Sys.setenv(OUTPUT = file.path(params$output_dir, paste0(params$sampleID, "_", params$sample, "_1p19q_codeletion_", params$currentdate, ".txt")))
+Sys.setenv(ARRAY = "EPIC")
+Sys.setenv(SCRIPT = file.path(params$pipeline, "scripts"))
+```
 
+```{bash, echo=FALSE, message=FALSE, eval=codel, results="hide", warning=FALSE}
+/usr/bin/bash $SCRIPT/segmentation_analysis.sh $INPUT $ARRAY > $OUTPUT
+```
 
-```{r,echo=FALSE,fig.height=1.25, fig.width=3,fig.align="left"}
+```{r fig-sub1, echo=FALSE, results="asis", fig.subcap = c("plot", "table"), out.width='.49\\linewidth', fig.asp = 0.22, fig.align="center", eval=codel}
+cat("\\textbf{\\large 1p/19q Codeletion status prediction}")
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(grid))
+codel <- read.table(file = file.path(params$output_dir, paste0(params$sampleID, "_", params$sample, "_1p19q_codeletion_", params$currentdate, ".txt")), header = TRUE, sep = ",")
+source(file.path(params$pipeline, "scripts/classifier/codelplot.R"))
+suppressWarnings(codel_plot(codel))
+
+grid.newpage()
+codeltab <- codel[,c(2,3,7,5,8)]
+names(codeltab) <- c("Status", "Est_1p", "Cutoff_1p", "Est_19q", "Cutoff_19q")
+codeltab[,-1] <- round(codeltab[,-1], 3)
+tt <- ttheme_minimal(core=list(fg_params=list(vjust=0.5)))
+g <- tableGrob(codeltab, rows = NULL, theme=tt)
+g$heights <- unit(c(0.5,0.5), "npc")
+
+grid.draw(g)
+
+```
+\textbf{\large MGMT promoter methylation status prediction} \textsuperscript{3}
+
+```{r fig-sub,echo=FALSE, fig.subcap = c("plot", "table"), out.width='.49\\linewidth', fig.asp = 0.22, fig.align="center"}
+suppressPackageStartupMessages(library(gridExtra))
+suppressPackageStartupMessages(library(grid))
 Mset_raw <- preprocessRaw(RGset)
 suppressWarnings(MNPciplot_mgmt(Mset_raw))
+
+grid.newpage()
 pred <- MNPpredict_mgmt(Mset_raw)
-knitr::kable(pred)
-write.table(pred, file = paste0(params$output_dir, "/", params$sampleID, "_", params$sample, "_mgmt_prediction.tsv"), row.names = F)
+pred[,-1] <- round(pred[,-1], 3)
+tt <- ttheme_minimal(core=list(fg_params=list(vjust=0.9, y=0.95))) 
+g2 <- tableGrob(pred, rows = NULL, theme=tt)
+g2$heights <- unit(c(0.5,0.5), "npc")
+
+grid.draw(g2)
+
+```
+
+```{r, echo = FALSE}
+write.table(pred, file = paste0(params$output_dir, "/", params$sampleID, "_", params$sample, "_mgmt_prediction_", params$currentdate, ".tsv"), row.names = F)
 ```
 
 \textbf{\large References} \newline

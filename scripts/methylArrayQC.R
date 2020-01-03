@@ -108,6 +108,7 @@ neg_green_summ <- rbind(means, sds)
 neg_green_summ$channel <- rep("green", nrow(neg_green_summ))
 
 neg_all <- rbind(neg_red_summ, neg_green_summ)
+neg_all$variable <- factor(RGset$Sample_Name, levels = RGset$Sample_Name)
 
 x <- gen_plot(neg_all, "NEGATIVE")
 print(x)

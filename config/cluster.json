@@ -1,6 +1,9 @@
 {
-    'version': "1.0",
+    'version': "2.0",
     'QC': "--partition=ccr,quick --time=00:30:00 --mem=5G --cpus-per-task=4",
-    'classifier': "--partition=ccr,quick --time=01:00:00 --mem=5G --cpus-per-task=4",
-    'group': "Compass"
+    'classifier': "--partition=ccr,quick --time=01:00:00 --mem=80G --cpus-per-task=4",
+    'tSNE': "--partition=ccr,norm --time=01:00:00 --exclusive --mem=80G",
+    'group': "Compass",
+    'mails': "-c nagarajs2@mail.nih.gov -c zied.abdullaev@nih.gov -c manoj.tyagi@nih.gov -c gangalapudiv2@mail.nih.gov",
+    'mail': "-c nagarajs2@mail.nih.gov"
 }

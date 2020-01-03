@@ -14,12 +14,12 @@
 #' @import conumee
 #' @import ggplot2
 
-MNPreport <- function(RGset,sample=1,FFPE=NULL,sampleID=NULL,case=NULL,material=NULL,sex=NULL,tsne=FALSE,output_file=NULL,output_dir=getwd(),pipeline=NULL,version=NULL,...){
+MNPreport <- function(RGset,sample=1,FFPE=NULL,sampleID=NULL,case=NULL,material=NULL,sex=NULL,arrayt=NULL,diagnosis=NULL,tsne=FALSE,output_file=NULL,output_dir=getwd(),pipeline=NULL,version=NULL,currentdate=NULL,...){
   if(is.null(sampleID)) sampleID <- paste0("Sample",sample)
   if(is.null(output_file)) output_file <- paste0(sampleID,".pdf")
 #  if(tsne){
   report <- file.path(output_dir, "/NCIreport.Rmd")
-  rmarkdown::render(report, output_dir=output_dir, output_file=output_file, intermediates_dir=output_dir, knit_root_dir=output_dir, params=list(sample=sample, sampleID=sampleID, case=case, material=material, sex=sex, output_dir=output_dir, version=version, pipeline=pipeline),...)
+  rmarkdown::render(report, output_dir=output_dir, output_file=output_file, intermediates_dir=output_dir, knit_root_dir=output_dir, params=list(sample=sample, sampleID=sampleID, case=case, material=material, sex=sex, arrayt=arrayt, diagnosis=diagnosis, output_dir=output_dir, version=version, pipeline=pipeline, currentdate=currentdate),...)
 #  }else{
 #  rmarkdown::render(system.file('report_2.Rmd',package = "mnp.v11b4"),output_dir=output_dir,
 #                      output_file=output_file,...)  
