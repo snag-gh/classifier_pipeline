@@ -1,5 +1,5 @@
 {
-    'version': "2.0",
+    'version': "2.1",
     'QC': "--partition=ccr,quick --time=00:30:00 --mem=5G --cpus-per-task=4",
     'classifier': "--partition=ccr,quick --time=01:00:00 --mem=80G --cpus-per-task=4",
     'tSNE': "--partition=ccr,norm --time=01:00:00 --exclusive --mem=80G",

@@ -7,10 +7,11 @@ import os
 
 df = pd.read_csv(argv[1], sep = '\t')
 df['seg.length'] = df['loc.end'] - df['loc.start'] + 1
-threshold_1p = -0.182
-threshold_19q = -0.266
+threshold_1p = -0.2
+threshold_19q = -0.273
 chr1_breakpoint = 120425000  #lowest observed end point for chr1 p arm 
-chr19_breakpoint = 29050000  #highest observed starting point for chr19 q arm
+#chr19_breakpoint = 29050000  #highest observed starting point for chr19 q arm
+chr19_breakpoint = 28400000  #highest observed starting point for chr19 q arm
 status = 'not codeleted'
 
 def weighted_mean(df):
@@ -37,7 +38,7 @@ def find_mean(df, chrm, breakpoint):
             beg = df[df.chrom == chrm].index[0]
             #print(beg)
             p_arm = df.iloc[beg:pend_loc+1].copy()
-            frag_ge1m = p_arm.loc[(p_arm['seg.length'] >= 1000000) & (p_arm['seg.mean'] > -0.15)] #Check if any fragment larger than 1Mbp has normal or high copy number
+            frag_ge1m = p_arm.loc[(p_arm['seg.length'] >= 1000000) & (p_arm['seg.mean'] > -0.2)] #Check if any fragment larger than 1Mbp has normal or high copy number
             #pp(p_arm)
             if not frag_ge1m.empty:
                 partial = 1
@@ -58,7 +59,7 @@ def find_mean(df, chrm, breakpoint):
             #print(end)
             q_arm = df.iloc[qstart_loc:end+1].copy()
             #pp(q_arm)
-            frag_ge1m = q_arm.loc[(q_arm['seg.length'] >= 1000000) & (q_arm['seg.mean'] > -0.15)]
+            frag_ge1m = q_arm.loc[(q_arm['seg.length'] >= 1000000) & (q_arm['seg.mean'] > -0.273)]
             if not frag_ge1m.empty:
                 partial = 1
             wtmean = weighted_mean(q_arm)

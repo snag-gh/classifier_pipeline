@@ -8,7 +8,7 @@ codel_plot <- function(data) {
   dtmelt$variable <- factor(dtmelt$variable, levels = c("1p", "19q"))
   dtmelt2$variable <- factor(dtmelt2$variable, levels = c("1p", "19q"))
 
-  g <- ggplot(dtmelt, aes(x=value, y=Sample)) + geom_point(size = 5) + xlim(-0.6, 0.2) + xlab("Weighted Segmentation mean") + geom_vline(data=dtmelt2, aes(xintercept = value), color = "darkred", size = 1, linetype = "dashed") + theme(strip.text.y = element_text(angle = 180), axis.title.y = element_blank(), axis.text.y = element_blank())
+  g <- ggplot(dtmelt, aes(x=value, y=Sample)) + geom_point(size = 5) + xlim(-1.0, 0.2) + xlab("Weighted Segmentation mean") + geom_vline(data=dtmelt2, aes(xintercept = value), color = "darkred", size = 1) + theme(strip.text.y = element_text(angle = 180), axis.title.y = element_blank(), axis.text.y = element_blank())
 
   g+facet_wrap(~ variable, ncol = 1, strip.position = "left") + scale_y_discrete("",breaks=c(0))
 }
